@@ -19,6 +19,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('category_id')->references('category_id')->on('categories');
+            $table->index('category_id');
         });
     }
 

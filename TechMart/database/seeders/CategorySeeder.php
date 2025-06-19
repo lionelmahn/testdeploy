@@ -10,20 +10,18 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            'Smartphones',
-            'Laptops',
-            'Tablets',
-            'Audio Devices',
-            'Smart Watches',
-            'Gaming',
-            'Accessories',
-            'Cameras',
+            'Điện thoại',
+            'Laptop',
+            'Tablet',
+            'Phụ kiện',
         ];
 
-        foreach ($categories as $category) {
+        foreach ($categories as $categoryName) {
             Category::create([
-                'category_name' => $category,
+                'category_name' => $categoryName,
             ]);
         }
+
+        $this->command->info('Đã tạo xong các danh mục sản phẩm!');
     }
 }

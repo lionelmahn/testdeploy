@@ -38,12 +38,24 @@ class CartController extends Controller
     }
 
     /**
+     * Get cart count for AJAX
+     */
+    public function getCount(): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $count = $user->cartItems()->sum('quantity');
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
      * Add product to cart (renamed from add to store)
      *
      * @param Request $request
-     * @return RedirectResponse
+     * @return RedirectResponse|JsonResponse
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $request->validate([
             'product_id' => 'required|exists:products,product_id',
@@ -55,6 +67,12 @@ class CartController extends Controller
 
         // Check stock
         if ($product->stock_quantity < $request->quantity) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không đủ hàng trong kho'
+                ]);
+            }
             return back()->with('error', 'Không đủ hàng trong kho');
         }
 
@@ -72,6 +90,12 @@ class CartController extends Controller
             $newQuantity = $existingItem->quantity + $request->quantity;
 
             if ($product->stock_quantity < $newQuantity) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Không đủ hàng trong kho'
+                    ]);
+                }
                 return back()->with('error', 'Không đủ hàng trong kho');
             }
 
@@ -92,6 +116,13 @@ class CartController extends Controller
                 'variant_id' => $request->variant_id,
                 'quantity' => $request->quantity,
                 'price' => $price
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã thêm sản phẩm vào giỏ hàng'
             ]);
         }
 

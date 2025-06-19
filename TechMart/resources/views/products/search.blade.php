@@ -55,7 +55,7 @@
                                 @endif
                             </div>
                             @if($product->stock_quantity > 0)
-                                <button onclick="addToCart({{ $product->product_id }})" class="btn btn-danger w-100 mt-auto">
+                                <button onclick="addToCart({{ $product->product_id }})" class="btn btn-danger btn-sm w-100 add-to-cart-btn" data-product-id="{{ $product->product_id }}">
                                     <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ
                                 </button>
                             @else
@@ -86,73 +86,7 @@
     @endif
 </div>
 
-@push('scripts')
-<script>
-// Add to Cart Function (same as home page)
-function addToCart(productId) {
-    @auth
-        fetch('{{ route("cart.add") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                product_id: productId,
-                quantity: 1
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('Đã thêm sản phẩm vào giỏ hàng!', 'success');
-            } else {
-                showNotification('Có lỗi xảy ra. Vui lòng thử lại!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Có lỗi xảy ra. Vui lòng thử lại!', 'error');
-        });
-    @else
-        showNotification('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!', 'warning');
-        setTimeout(() => {
-            window.location.href = '{{ route("login") }}';
-        }, 2000);
-    @endauth
-}
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `fixed-top mt-3 me-3 p-3 rounded shadow text-white`;
-    
-    const colors = {
-        success: 'bg-success',
-        error: 'bg-danger',
-        warning: 'bg-warning text-dark',
-        info: 'bg-info'
-    };
-    
-    notification.classList.add(...colors[type].split(' '));
-    notification.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation' : 'info'}-circle me-2"></i>
-            <div>${message}</div>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.classList.add('opacity-0', 'transition-opacity');
-    }, 3000);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3500);
-}
-</script>
-@endpush
 
 @push('styles')
 <style>
@@ -174,3 +108,96 @@ function showNotification(message, type = 'info') {
 @endpush
 
 @endsection
+
+
+
+@auth
+<!-- Toast notification -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="cartToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-shopping-cart text-success me-2"></i>
+            <strong class="me-auto">Giỏ hàng</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            <!-- Message will be inserted here -->
+        </div>
+    </div>
+</div>
+@endauth
+
+@auth
+<script>
+function addToCart(productId) {
+    const button = document.querySelector(`[data-product-id="${productId}"]`);
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang thêm...';
+
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('quantity', 1);
+    formData.append('_token', '{{ csrf_token() }}');
+
+    fetch('{{ route("cart.store") }}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            updateCartCount();
+        } else {
+            showToast(data.message || 'Có lỗi xảy ra', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Lỗi:', error);
+        showToast('Không thể thêm sản phẩm vào giỏ', 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('cartToast');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastHeader = toast.querySelector('.toast-header');
+    
+    toastMessage.textContent = message;
+
+    const icon = toastHeader.querySelector('i');
+    if (type === 'success') {
+        icon.className = 'fas fa-check-circle text-success me-2';
+        toastHeader.classList.remove('bg-danger');
+        toastHeader.classList.add('bg-success', 'text-white');
+    } else {
+        icon.className = 'fas fa-exclamation-circle text-danger me-2';
+        toastHeader.classList.remove('bg-success');
+        toastHeader.classList.add('bg-danger', 'text-white');
+    }
+
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+}
+
+function updateCartCount() {
+    fetch('{{ route("cart.count") }}')
+        .then(response => response.json())
+        .then(data => {
+            const cartBadge = document.querySelector('.cart-count');
+            if (cartBadge) {
+                cartBadge.textContent = data.count;
+                cartBadge.style.display = data.count > 0 ? 'inline' : 'none';
+            }
+        })
+        .catch(error => console.error('Lỗi khi cập nhật giỏ hàng:', error));
+}
+</script>
+@endauth

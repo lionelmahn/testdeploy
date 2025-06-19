@@ -78,7 +78,6 @@
     
     .payment-option:hover {
         border-color: #dc2626;
-        /* background: #fef2f2; */
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
     }
@@ -87,7 +86,66 @@
         border-color: #dc2626;
         background: linear-gradient(135deg,  #ffffff,#fdefef);
         color: rgb(0, 0, 0);
-        /* box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2); */
+    }
+    
+    /* Disabled payment options */
+    .payment-option.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f9f9f9;
+        border-color: #d1d5db;
+        position: relative;
+    }
+    
+    .payment-option.disabled:hover {
+        transform: none;
+        box-shadow: none;
+        border-color: #d1d5db;
+    }
+    
+    .payment-option.disabled input[type="radio"] {
+        pointer-events: none;
+    }
+    
+    /* Tooltip for disabled options */
+    .payment-option.disabled::after {
+        content: "Phương thức thanh toán đang được bảo trì";
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .payment-option.disabled::before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid rgba(0, 0, 0, 0.8);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .payment-option.disabled:hover::after,
+    .payment-option.disabled:hover::before {
+        opacity: 1;
     }
     
     .payment-option input[type="radio"] {
@@ -406,6 +464,12 @@
         .order-summary h4 {
             font-size: 1rem;
         }
+        
+        .payment-option.disabled::after {
+            font-size: 11px;
+            padding: 6px 10px;
+            top: -35px;
+        }
     }
 </style>
 @endpush
@@ -550,61 +614,72 @@
                             </div>
                             
                             <div class="payment-methods">
-                                <label class="payment-option" data-method="cod">
-                                    <input type="radio" name="payment_method" value="cod" 
-                                           {{ old('payment_method', 'cod') == 'cod' ? 'checked' : '' }}>
-                                    <div class="d-flex align-items-center">
-                                        <div class="payment-icon bg-danger bg-opacity-10 text-danger">
-                                            <i class="fas fa-money-bill-wave"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Thanh toán khi nhận hàng (COD)</div>
-                                            <small class="text-muted">Thanh toán bằng tiền mặt khi nhận hàng</small>
-                                        </div>
+                                <div class="row g-3">
+                                    <!-- COD - Available -->
+                                    <div class="col-md-6">
+                                        <label class="payment-option h-100" data-method="cod">
+                                            <input type="radio" name="payment_method" value="cod" 
+                                                   {{ old('payment_method', 'cod') == 'cod' ? 'checked' : '' }}>
+                                            <div class="d-flex align-items-center h-100">
+                                                <div class="payment-icon bg-danger bg-opacity-10 text-danger">
+                                                    <i class="fas fa-money-bill-wave"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">Thanh toán khi nhận hàng (COD)</div>
+                                                    <small class="text-muted">Thanh toán bằng tiền mặt khi nhận hàng</small>
+                                                </div>
+                                            </div>
+                                        </label>
                                     </div>
-                                </label>
 
-                                <label class="payment-option" data-method="bank_transfer">
-                                    <input type="radio" name="payment_method" value="bank_transfer" 
-                                           {{ old('payment_method') == 'bank_transfer' ? 'checked' : '' }}>
-                                    <div class="d-flex align-items-center">
-                                        <div class="payment-icon" style="background-color: rgba(220, 38, 38, 0.1); color: #dc2626;">
-                                            <i class="fas fa-university"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Chuyển khoản ngân hàng</div>
-                                            <small class="text-muted">Chuyển khoản qua tài khoản ngân hàng</small>
+                                    <!-- Bank Transfer - Disabled -->
+                                    <div class="col-md-6">
+                                        <div class="payment-option disabled h-100" data-method="bank_transfer">
+                                            <input type="radio" name="payment_method" value="bank_transfer" disabled>
+                                            <div class="d-flex align-items-center h-100">
+                                                <div class="payment-icon" style="background-color: rgba(209, 213, 219, 0.3); color: #9ca3af;">
+                                                    <i class="fas fa-university"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-muted">Chuyển khoản ngân hàng</div>
+                                                    <small class="text-muted">Chuyển khoản qua tài khoản ngân hàng</small>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </label>
 
-                                <label class="payment-option" data-method="momo">
-                                    <input type="radio" name="payment_method" value="momo" 
-                                           {{ old('payment_method') == 'momo' ? 'checked' : '' }}>
-                                    <div class="d-flex align-items-center">
-                                        <div class="payment-icon" style="background-color: rgba(220, 38, 38, 0.1); color: #dc2626;">
-                                            <i class="fab fa-cc-mastercard"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Ví MoMo</div>
-                                            <small class="text-muted">Thanh toán qua ví điện tử MoMo</small>
+                                    <!-- MoMo - Disabled -->
+                                    <div class="col-md-6">
+                                        <div class="payment-option disabled h-100" data-method="momo">
+                                            <input type="radio" name="payment_method" value="momo" disabled>
+                                            <div class="d-flex align-items-center h-100">
+                                                <div class="payment-icon" style="background-color: rgba(209, 213, 219, 0.3); color: #9ca3af;">
+                                                    <i class="fab fa-cc-mastercard"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-muted">Ví MoMo</div>
+                                                    <small class="text-muted">Thanh toán qua ví điện tử MoMo</small>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </label>
 
-                                <label class="payment-option" data-method="vnpay">
-                                    <input type="radio" name="payment_method" value="vnpay" 
-                                           {{ old('payment_method') == 'vnpay' ? 'checked' : '' }}>
-                                    <div class="d-flex align-items-center">
-                                        <div class="payment-icon" style="background-color: rgba(220, 38, 38, 0.1); color: #dc2626;">
-                                            <i class="fas fa-credit-card"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">VNPay</div>
-                                            <small class="text-muted">Thanh toán qua cổng VNPay</small>
+                                    <!-- VNPay - Disabled -->
+                                    <div class="col-md-6">
+                                        <div class="payment-option disabled h-100" data-method="vnpay">
+                                            <input type="radio" name="payment_method" value="vnpay" disabled>
+                                            <div class="d-flex align-items-center h-100">
+                                                <div class="payment-icon" style="background-color: rgba(209, 213, 219, 0.3); color: #9ca3af;">
+                                                    <i class="fas fa-credit-card"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-muted">VNPay</div>
+                                                    <small class="text-muted">Thanh toán qua cổng VNPay</small>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -733,27 +808,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('place-order-btn');
     const btnText = document.getElementById('btn-text');
     const btnLoading = document.getElementById('btn-loading');
-    const paymentOptions = document.querySelectorAll('.payment-option');
+    const paymentOptions = document.querySelectorAll('.payment-option:not(.disabled)');
 
-    // Payment method selection
+    // Payment method selection (only for enabled options)
     paymentOptions.forEach(option => {
         option.addEventListener('click', function() {
             // Remove active class from all options
-            paymentOptions.forEach(opt => opt.classList.remove('active'));
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('active'));
             
             // Add active class to clicked option
             this.classList.add('active');
             
             // Check the radio button
             const radio = this.querySelector('input[type="radio"]');
-            radio.checked = true;
+            if (radio && !radio.disabled) {
+                radio.checked = true;
+            }
         });
     });
 
-    // Set initial active payment method
-    const checkedPayment = document.querySelector('input[name="payment_method"]:checked');
-    if (checkedPayment) {
-        checkedPayment.closest('.payment-option').classList.add('active');
+    // Prevent clicking on disabled payment options
+    document.querySelectorAll('.payment-option.disabled').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    // Set initial active payment method (COD)
+    const codOption = document.querySelector('.payment-option[data-method="cod"]');
+    if (codOption) {
+        codOption.classList.add('active');
+        const codRadio = codOption.querySelector('input[type="radio"]');
+        if (codRadio) {
+            codRadio.checked = true;
+        }
     }
 
     // Form submission
@@ -784,6 +873,13 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
             phoneField.classList.add('is-invalid');
             showToast('Số điện thoại không hợp lệ', 'error');
+        }
+
+        // Payment method validation
+        const checkedPayment = document.querySelector('input[name="payment_method"]:checked');
+        if (!checkedPayment || checkedPayment.disabled) {
+            isValid = false;
+            showToast('Vui lòng chọn phương thức thanh toán', 'error');
         }
 
         if (!isValid) {

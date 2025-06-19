@@ -136,28 +136,33 @@
                                             </div>
                                         </td>
                                         <td>
-                                            @if(isset($order->payment_status))
-                                                @php
-                                                    $paymentClasses = [
-                                                        'pending' => 'bg-warning text-dark',
-                                                        'paid' => 'bg-success text-white',
-                                                        'failed' => 'bg-danger text-white',
-                                                        'refunded' => 'bg-info text-white',
-                                                    ];
-                                                    $paymentClass = $paymentClasses[$order->payment_status] ?? 'bg-secondary text-white';
-                                                @endphp
-                                                <div class="d-flex flex-column gap-1">
-                                                    <span class="badge {{ $paymentClass }}">
-                                                        {{ $order->payment_status_label ?? ucfirst($order->payment_status) }}
-                                                    </span>
-                                                    @if(isset($order->payment_method))
-                                                        <small class="text-muted">
-                                                            {{ $order->payment_method_label ?? $order->payment_method }}
-                                                        </small>
-                                                    @endif
-                                                </div>
+                                            @if($order->status === 'cancelled')
+                                                <span class="badge bg-secondary">Đã hủy</span>
+                                                <small class="text-muted d-block">Đơn hàng đã bị hủy</small>
                                             @else
-                                                <span class="badge bg-secondary">Chưa xác định</span>
+                                                @if(isset($order->payment_status))
+                                                    @php
+                                                        $paymentClasses = [
+                                                            'pending' => 'bg-warning text-dark',
+                                                            'paid' => 'bg-success text-white',
+                                                            'failed' => 'bg-danger text-white',
+                                                            'refunded' => 'bg-info text-white',
+                                                        ];
+                                                        $paymentClass = $paymentClasses[$order->payment_status] ?? 'bg-secondary text-white';
+                                                    @endphp
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <span class="badge {{ $paymentClass }}">
+                                                            {{ $order->payment_status_label ?? ucfirst($order->payment_status) }}
+                                                        </span>
+                                                        @if(isset($order->payment_method))
+                                                            <small class="text-muted">
+                                                                {{ $order->payment_method_label ?? $order->payment_method }}
+                                                            </small>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <span class="badge bg-secondary">Chưa xác định</span>
+                                                @endif
                                             @endif
                                         </td>
                                         <td>
@@ -260,8 +265,85 @@
 
                     <!-- Pagination -->
                     @if($orders->hasPages())
-                        <div class="d-flex justify-content-center mt-4">
-                            {{ $orders->appends(request()->query())->links() }}
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="text-muted">
+                                Hiển thị {{ $orders->firstItem() }} - {{ $orders->lastItem() }} 
+                                trong tổng số {{ $orders->total() }} đơn hàng
+                            </div>
+                            <nav aria-label="Phân trang đơn hàng">
+                                <ul class="pagination pagination-sm mb-0">
+                                    {{-- Previous Page Link --}}
+                                    @if ($orders->onFirstPage())
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $orders->appends(request()->query())->previousPageUrl() }}">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Pagination Elements --}}
+                                    @php
+                                        $start = max($orders->currentPage() - 2, 1);
+                                        $end = min($start + 4, $orders->lastPage());
+                                        $start = max($end - 4, 1);
+                                    @endphp
+
+                                    @if($start > 1)
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $orders->appends(request()->query())->url(1) }}">1</a>
+                                        </li>
+                                        @if($start > 2)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+                                    @endif
+
+                                    @for ($i = $start; $i <= $end; $i++)
+                                        @if ($i == $orders->currentPage())
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ $i }}</span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $orders->appends(request()->query())->url($i) }}">{{ $i }}</a>
+                                            </li>
+                                        @endif
+                                    @endfor
+
+                                    @if($end < $orders->lastPage())
+                                        @if($end < $orders->lastPage() - 1)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $orders->appends(request()->query())->url($orders->lastPage()) }}">{{ $orders->lastPage() }}</a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Next Page Link --}}
+                                    @if ($orders->hasMorePages())
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ $orders->appends(request()->query())->nextPageUrl() }}">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </span>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </nav>
                         </div>
                     @endif
                 </div>
@@ -309,6 +391,38 @@
         </div>
     </div>
 </div>
+
+<style>
+.pagination-sm .page-link {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.pagination .page-link {
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+}
+
+.pagination .page-link:hover {
+    color: #0d6efd;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+</style>
 @endsection
 
 @push('scripts')

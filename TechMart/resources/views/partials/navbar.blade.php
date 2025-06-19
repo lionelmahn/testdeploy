@@ -32,7 +32,7 @@
                     <i class="fas fa-shopping-cart fs-5 text-dark"></i>
                     @auth
                         @if(auth()->user()->cartItems->count() > 0)
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-count">
                                 {{ auth()->user()->cartItems->sum('quantity') }}
                             </span>
                         @endif
@@ -68,3 +68,32 @@
         </ul>
     </div>
 </nav>
+
+@auth
+<script>
+// Load cart count when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateCartCount();
+});
+
+function updateCartCount() {
+    fetch('{{ route("cart.count") }}')
+        .then(response => response.json())
+        .then(data => {
+            const cartBadge = document.querySelector('.cart-count');
+            if (cartBadge) {
+                cartBadge.textContent = data.count;
+                if (data.count > 0) {
+                    cartBadge.style.display = 'inline';
+                } else {
+                    cartBadge.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => console.error('Error updating cart count:', error));
+}
+
+// Make updateCartCount globally available
+window.updateCartCount = updateCartCount;
+</script>
+@endauth

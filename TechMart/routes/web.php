@@ -6,13 +6,12 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
-use App\Http\Controllers\Admin\RevenueController;
-use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,24 +33,30 @@ Route::get('/categories/{category}', [ProductController::class, 'category'])->na
 // Cart routes (require authentication)
 Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-    Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+    Route::post('/cart', [CartController::class, 'store'])->name('cart.store'); // Route này sẽ hoạt động
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+
     Route::patch('/cart/{cartItem}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
     Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
 
-    // Order routes (customer)
+    // Thêm route để lấy số lượng cart
+    Route::get('/cart/count', [CartController::class, 'getCount'])->name('cart.count');
+
+    // Order routes - Thêm route này
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
-    Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder'])->name('orders.reorder');
 
     // Checkout routes
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+    // Sửa lỗi route success - thay {order} thành {orderId}
     Route::get('/checkout/success/{orderId}', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
     Route::get('/checkout/bank-transfer/{orderId}', [CheckoutController::class, 'bankTransfer'])->name('checkout.bank-transfer');
+
+    // Thêm routes cho các phương thức thanh toán khác
     Route::get('/checkout/momo/{orderId}', [CheckoutController::class, 'momo'])->name('checkout.momo');
     Route::get('/checkout/vnpay/{orderId}', [CheckoutController::class, 'vnpay'])->name('checkout.vnpay');
 });
@@ -82,8 +87,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::resource('users', UserController::class);
 
     // Revenue Statistics
-    Route::get('/revenue', [RevenueController::class, 'index'])->name('revenue.index');
-    Route::get('/revenue/export', [RevenueController::class, 'export'])->name('revenue.export');
+    Route::get('/revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
+    Route::get('/revenue/export', [\App\Http\Controllers\Admin\RevenueController::class, 'export'])->name('revenue.export');
 });
 
 require __DIR__ . '/auth.php';

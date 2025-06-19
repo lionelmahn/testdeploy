@@ -30,13 +30,6 @@
                 </div>
             @endif
 
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
             <div class="row">
                 <!-- Order Information -->
                 <div class="col-lg-8">
@@ -143,30 +136,42 @@
                                                 </span>
                                             </td>
                                         </tr>
-                                        @if(isset($order->payment_method))
-                                        <tr>
-                                            <td><strong>Phương thức thanh toán:</strong></td>
-                                            <td>{{ $order->payment_method_label ?? $order->payment_method }}</td>
-                                        </tr>
-                                        @endif
-                                        @if(isset($order->payment_status))
-                                        <tr>
-                                            <td><strong>Trạng thái thanh toán:</strong></td>
-                                            <td>
-                                                @php
-                                                    $paymentClasses = [
-                                                        'pending' => 'bg-warning text-dark',
-                                                        'paid' => 'bg-success',
-                                                        'failed' => 'bg-danger',
-                                                        'refunded' => 'bg-info',
-                                                    ];
-                                                    $paymentClass = $paymentClasses[$order->payment_status] ?? 'bg-secondary';
-                                                @endphp
-                                                <span class="badge {{ $paymentClass }}">
-                                                    {{ $order->payment_status_label ?? ucfirst($order->payment_status) }}
-                                                </span>
-                                            </td>
-                                        </tr>
+                                        @if($order->status !== 'cancelled')
+                                            @if(isset($order->payment_method))
+                                            <tr>
+                                                <td><strong>Phương thức thanh toán:</strong></td>
+                                                <td>{{ $order->payment_method_label ?? $order->payment_method }}</td>
+                                            </tr>
+                                            @endif
+                                            @if(isset($order->payment_status))
+                                            <tr>
+                                                <td><strong>Trạng thái thanh toán:</strong></td>
+                                                <td>
+                                                    @php
+                                                        $paymentClasses = [
+                                                            'pending' => 'bg-warning text-dark',
+                                                            'paid' => 'bg-success',
+                                                            'failed' => 'bg-danger',
+                                                            'refunded' => 'bg-info',
+                                                        ];
+                                                        $paymentClass = $paymentClasses[$order->payment_status] ?? 'bg-secondary';
+                                                    @endphp
+                                                    <span class="badge {{ $paymentClass }}">
+                                                        {{ $order->payment_status_label ?? ucfirst($order->payment_status) }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            @endif
+                                        @else
+                                            <tr>
+                                                <td><strong>Trạng thái đơn hàng:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-danger">Đã hủy</span>
+                                                    <div class="mt-1">
+                                                        <small class="text-muted">Đơn hàng này đã bị hủy</small>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         @endif
                                         @if(isset($order->notes) && $order->notes)
                                         <tr>
@@ -250,8 +255,8 @@
                                                 <td>
                                                     @if(isset($item->variant_name) && $item->variant_name)
                                                         <span class="badge bg-light text-dark">{{ $item->variant_name }}</span>
-                                                    @elseif($item->productVariant && $item->productVariant->variant_name)
-                                                        <span class="badge bg-light text-dark">{{ $item->productVariant->variant_name }}</span>
+                                                    @elseif($item->productVariant && $item->productVariant->name)
+                                                        <span class="badge bg-light text-dark">{{ $item->productVariant->name }}</span>
                                                     @else
                                                         <span class="text-muted">Mặc định</span>
                                                     @endif
@@ -343,51 +348,51 @@
                         <div class="card-body">
                             <div class="d-grid gap-2">
                                 @if($order->status === 'pending')
-                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="processing">
-                                        <button type="submit" class="btn btn-info w-100" onclick="return confirm('Xác nhận đơn hàng này?')">
+                                        <button type="submit" class="btn btn-info w-100">
                                             <i class="fas fa-cog"></i> Xác nhận đơn hàng
                                         </button>
                                     </form>
                                 @endif
                                 
                                 @if(in_array($order->status, ['pending', 'processing']))
-                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="shipped">
-                                        <button type="submit" class="btn btn-primary w-100" onclick="return confirm('Giao cho vận chuyển?')">
+                                        <button type="submit" class="btn btn-primary w-100">
                                             <i class="fas fa-shipping-fast"></i> Giao cho vận chuyển
                                         </button>
                                     </form>
                                 @endif
                                 
                                 @if($order->status === 'shipped')
-                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="delivered">
-                                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Xác nhận đã giao hàng?')">
+                                        <button type="submit" class="btn btn-success w-100">
                                             <i class="fas fa-check"></i> Xác nhận đã giao
                                         </button>
                                     </form>
                                 @endif
 
                                 @if($order->status === 'delivered')
-                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="completed">
-                                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Hoàn thành đơn hàng này?')">
+                                        <button type="submit" class="btn btn-success w-100">
                                             <i class="fas fa-star"></i> Hoàn thành đơn hàng
                                         </button>
                                     </form>
                                 @endif
                                 
                                 <hr>
-                                <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}" style="display: inline;">
+                                <form method="POST" action="{{ route('admin.orders.update-status', $order->id ?? $order->order_id) }}">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="status" value="cancelled">
@@ -431,22 +436,4 @@
     padding: 0 10px;
 }
 </style>
-@endpush
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add loading state to buttons
-    const forms = document.querySelectorAll('form[method="POST"]');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const button = form.querySelector('button[type="submit"]');
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-            }
-        });
-    });
-});
-</script>
 @endpush
